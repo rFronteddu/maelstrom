@@ -26,13 +26,11 @@ IDs may be of any type–strings, booleans, integers, floats, arrays, etc.
 Remove windows terminator
 ```
 sed -i 's/\r//' maelstrom.py
-sed -i 's/\r//' echo.py
-sed -i 's/\r//' uuid.py
-sed -i 's/\r//' broadcast.py
-sed -i 's/\r//' broadcast_periodic.py
-sed -i 's/\r//' goc.py
-sed -i 's/\r//' single_kafka.py
-sed -i 's/\r//' m_kafka.py
+```
+
+Make scripts executable:
+```
+chmod +x be_kafka.py
 ```
 
 ## Broadcast
@@ -71,7 +69,7 @@ Solution must pass m-per-ops < 32, median lat < 1s, max lat < 2s and must also c
 ```
 
 ## Grow-only Counter
-### goc
+* goc.py
 Each node writes in a key, only need to lock locally. Then read can sum all.
 ```
 ./maelstrom/maelstrom test -w g-counter --bin ./goc.py --node-count 3 --rate 100 --time-limit 20 --nemesis partition
@@ -86,4 +84,20 @@ Each node writes in a key, only need to lock locally. Then read can sum all.
 * m_kafka.py: move local structures to linear kv store
 ```
 ./maelstrom/maelstrom test -w kafka --bin ./m_kafka.py --node-count 2 --concurrency 2n --time-limit 20 --rate 1000
+```
+
+* e_kafka.py
+  * one writer per key: use stable hash (normal hash is randomized per process) to associate key to node
+
+```
+./maelstrom/maelstrom test -w kafka --bin ./e_kafka.py --node-count 1 --concurrency 2n --time-limit 20 --rate 1000
+./maelstrom/maelstrom test -w kafka --bin ./e_kafka.py --node-count 2 --concurrency 2n --time-limit 20 --rate 1000
+```
+
+* be_kafka.py
+  * storing in local memory is risky, use sharding + seq-kv
+    * change send/poll for local node to lazy read and save in seq-kv
+
+```
+./maelstrom/maelstrom test -w kafka --bin ./be_kafka.py --node-count 2 --concurrency 2n --time-limit 20 --rate 1000
 ```
