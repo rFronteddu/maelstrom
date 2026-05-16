@@ -4,6 +4,10 @@ file implements the node abstractions.
 
 This was run on windows through WSL. Configure the terminal to connect to WSL and use the commands below to launch each test.
 
+## Requirements
+* python 3.14.4
+* [maelstrom](https://github.com/jepsen-io/maelstrom/releases/tag/v0.2.4)
+
 ## Echo
 Your node will receive an "echo" message from Maelstrom, send a message with the same body back to the client but with a message type of "echo_ok".
 ```

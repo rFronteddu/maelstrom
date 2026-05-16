@@ -235,43 +235,46 @@ class Node:
         Reads JSON messages from stdin forever.
         Each message is handled in its own asyncio task.
         """
-        loop = asyncio.get_event_loop()
 
         async def main():
+            loop = asyncio.get_running_loop()
+
             reader = asyncio.StreamReader()
             protocol = asyncio.StreamReaderProtocol(reader)
 
             await loop.connect_read_pipe(lambda: protocol, sys.stdin)
 
-            # periodic tasks
+            periodic_task_handles = []
+
             for seconds, func in self.periodic_tasks:
 
-                # Default arguments are important here.
-                # Without:
-                #
-                #   seconds=seconds, func=func
-                #
-                # the loop variables would be captured incorrectly by Python closures,
-                # causing every periodic task to use the final loop values.
                 async def periodic_loop(seconds=seconds, func=func):
                     while True:
                         await asyncio.sleep(seconds)
                         await func()
-                asyncio.create_task(periodic_loop())
 
-            while True:
-                line = await reader.readline()
+                periodic_task_handles.append(asyncio.create_task(periodic_loop()))
 
-                if not line:
-                    break
+            try:
+                while True:
+                    line = await reader.readline()
 
-                # Each incoming message is handled in its own asyncio task.
-                # This allows concurrent request handling.
-                loop.create_task(self._handle_msg(line.decode()))
+                    if not line:
+                        break
 
-        loop.run_until_complete(main())
+                    asyncio.create_task(self._handle_msg(line.decode()))
+            finally:
+                for task in periodic_task_handles:
+                    task.cancel()
 
-    def log(*args):
+                await asyncio.gather(
+                    *periodic_task_handles,
+                    return_exceptions=True,
+                )
+
+        asyncio.run(main())
+
+    def log(self, *args):
         """
         Write debug logs to stderr.
 
