@@ -31,6 +31,8 @@ sed -i 's/\r//' uuid.py
 sed -i 's/\r//' broadcast.py
 sed -i 's/\r//' broadcast_periodic.py
 sed -i 's/\r//' goc.py
+sed -i 's/\r//' single_kafka.py
+sed -i 's/\r//' m_kafka.py
 ```
 
 ## Broadcast
@@ -76,3 +78,12 @@ Each node writes in a key, only need to lock locally. Then read can sum all.
 ```
 
 ## Single node kafka
+* single_kafka.py
+```
+./maelstrom/maelstrom test -w kafka --bin ./single_kafka.py --node-count 1 --concurrency 2n --time-limit 20 --rate 1000
+```
+
+* m_kafka.py: move local structures to linear kv store
+```
+./maelstrom/maelstrom test -w kafka --bin ./m_kafka.py --node-count 2 --concurrency 2n --time-limit 20 --rate 1000
+```
