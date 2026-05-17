@@ -39,18 +39,22 @@ Implement a broadcast system that gossips messages between all nodes in the clus
 * broadcast.py Basic flood to all nodes once, replicate messages across a cluster that has no network partitions
 * broadcast_periodic.py batched flood
 
+Single node
 ```
 ./maelstrom/maelstrom test -w broadcast --bin ./broadcast.py --node-count 1 --time-limit 20 --rate 10
 ```
 
+Multi node
 ```
 ./maelstrom/maelstrom test -w broadcast --bin ./broadcast.py --node-count 5 --time-limit 20 --rate 10
 ```
 
+Add network partition
 ```
 ./maelstrom/maelstrom test -w broadcast --bin ./broadcast.py --node-count 5 --time-limit 20 --rate 10 --nemesis partition
 ```
 
+Switch to gossip
 ```
 ./maelstrom/maelstrom test -w broadcast --bin ./broadcast_periodic.py --node-count 5 --time-limit 20 --rate 10 --nemesis partition
 ```
@@ -100,4 +104,28 @@ Each node writes in a key, only need to lock locally. Then read can sum all.
 
 ```
 ./maelstrom/maelstrom test -w kafka --bin ./be_kafka.py --node-count 2 --concurrency 2n --time-limit 20 --rate 1000
+```
+
+## Totally available transactions
+### Single-node, totally available transactions
+```
+./maelstrom/maelstrom test -w txn-rw-register --bin ./sn-transactions.py --node-count 1 --time-limit 20 --rate 1000 --concurrency 2n --consistency-models read-uncommitted --availability total
+```
+
+### Multi-node, totally available transactions
+```
+./maelstrom/maelstrom test -w txn-rw-register --bin ./mn-transactions.py --node-count 2 --concurrency 2n --time-limit 20 --rate 1000 --consistency-models read-uncommitted
+
+./maelstrom/maelstrom test -w txn-rw-register --bin ./mn-transactions.py --node-count 2 --concurrency 2n --time-limit 20 --rate 1000 --consistency-models read-uncommitted --availability total --nemesis partition
+```
+
+### Multi-node, totally available read committed transactions 
+
+```
+./maelstrom/maelstrom test -w txn-rw-register --bin ./tarc-transactions.py --node-count 2 --concurrency 2n --time-limit 20 --rate 1000 --consistency-models read-committed --availability total –-nemesis partition
+```
+
+This version prevents cycle by outlawing cycles
+```
+./maelstrom/maelstrom test -w txn-rw-register --bin ./ta2rc-transactions.py --node-count 2 --concurrency 2n --time-limit 20 --rate 1000 --consistency-models read-committed --availability total –-nemesis partition
 ```

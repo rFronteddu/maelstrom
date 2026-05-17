@@ -14,7 +14,7 @@ async def add(req):
     async with lock:
         counter += req.body["delta"]
 
-        await node.rpc("lin-kv", {
+        await node.rpc("seq-kv", {
             "type": "write",
             "key": node.node_id,
             "value": counter

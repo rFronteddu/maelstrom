@@ -6,9 +6,6 @@ from maelstrom import Node
 node = Node()
 messages = set()
 
-def log(*args):
-    print(*args, file=sys.stderr, flush=True)
-
 @node.handler
 async def broadcast(req):
     """Basic flood to all nodes once"""
@@ -20,7 +17,7 @@ async def broadcast(req):
     messages.add(msg)
 
     for n in node.node_ids:
-        if n!= node.node_id:
+        if n != node.node_id:
             await node.send(n, {
                 "type": "broadcast",
                 "message": msg,
