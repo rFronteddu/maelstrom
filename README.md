@@ -1,6 +1,7 @@
 # Maelstrom-py
-This project contains solutions to the fly.io maelstrom challenges. The maelstrom.py 
-file implements the node abstractions.
+This repository contains two libraries and several solutions to exercises for distributed systems.
+* malestrom.py is an asyncio flyio maelstrom wrapper in python to use with fly.io challenges
+* tiny_test.lib.py is a threading library to simulate similar problems
 
 This was run on windows through WSL. Configure the terminal to connect to WSL and use the commands below to launch each test.
 
@@ -8,13 +9,14 @@ This was run on windows through WSL. Configure the terminal to connect to WSL an
 * python 3.14.4
 * [maelstrom](https://github.com/jepsen-io/maelstrom/releases/tag/v0.2.4)
 
-## Echo
+## Maelstrom
+### Echo
 Your node will receive an "echo" message from Maelstrom, send a message with the same body back to the client but with a message type of "echo_ok".
 ```
 ./maelstrom/maelstrom test -w echo --bin ./echo.py --node-count 1 --time-limit 10
 ```
 
-## UUID
+### UUID
 Implement a globally-unique ID generation system that runs against Maelstrom’s unique-ids workload. 
 
 IDs may be of any type–strings, booleans, integers, floats, arrays, etc.
@@ -33,7 +35,7 @@ Make scripts executable:
 chmod +x be_kafka.py
 ```
 
-## Broadcast
+### Broadcast
 Implement a broadcast system that gossips messages between all nodes in the cluster. 
 
 * broadcast.py Basic flood to all nodes once, replicate messages across a cluster that has no network partitions
@@ -72,14 +74,14 @@ Solution must pass m-per-ops < 32, median lat < 1s, max lat < 2s and must also c
 ./maelstrom/maelstrom test -w broadcast --bin ./broadcast_periodic.py --node-count 25 --time-limit 20 --rate 100 --latency 100
 ```
 
-## Grow-only Counter
+### Grow-only Counter
 * goc.py
 Each node writes in a key, only need to lock locally. Then read can sum all.
 ```
 ./maelstrom/maelstrom test -w g-counter --bin ./goc.py --node-count 3 --rate 100 --time-limit 20 --nemesis partition
 ```
 
-## Single node kafka
+### Single node kafka
 * single_kafka.py
 ```
 ./maelstrom/maelstrom test -w kafka --bin ./single_kafka.py --node-count 1 --concurrency 2n --time-limit 20 --rate 1000
@@ -106,20 +108,20 @@ Each node writes in a key, only need to lock locally. Then read can sum all.
 ./maelstrom/maelstrom test -w kafka --bin ./be_kafka.py --node-count 2 --concurrency 2n --time-limit 20 --rate 1000
 ```
 
-## Totally available transactions
-### Single-node, totally available transactions
+### Totally available transactions
+#### Single-node, totally available transactions
 ```
 ./maelstrom/maelstrom test -w txn-rw-register --bin ./sn-transactions.py --node-count 1 --time-limit 20 --rate 1000 --concurrency 2n --consistency-models read-uncommitted --availability total
 ```
 
-### Multi-node, totally available transactions
+#### Multi-node, totally available transactions
 ```
 ./maelstrom/maelstrom test -w txn-rw-register --bin ./mn-transactions.py --node-count 2 --concurrency 2n --time-limit 20 --rate 1000 --consistency-models read-uncommitted
 
 ./maelstrom/maelstrom test -w txn-rw-register --bin ./mn-transactions.py --node-count 2 --concurrency 2n --time-limit 20 --rate 1000 --consistency-models read-uncommitted --availability total --nemesis partition
 ```
 
-### Multi-node, totally available read committed transactions 
+#### Multi-node, totally available read committed transactions 
 
 ```
 ./maelstrom/maelstrom test -w txn-rw-register --bin ./tarc-transactions.py --node-count 2 --concurrency 2n --time-limit 20 --rate 1000 --consistency-models read-committed --availability total –-nemesis partition
@@ -128,4 +130,76 @@ Each node writes in a key, only need to lock locally. Then read can sum all.
 This version prevents cycle by outlawing cycles
 ```
 ./maelstrom/maelstrom test -w txn-rw-register --bin ./ta2rc-transactions.py --node-count 2 --concurrency 2n --time-limit 20 --rate 1000 --consistency-models read-committed --availability total –-nemesis partition
+```
+
+## Tiny Test Lib
+The tiny_* files do not require Maelstrom. Each implement some distributed algorithm.
+
+## Utils
+### Tree from neighbors
+```
+def compute_tree(
+  node_id: str,
+  node_ids: list[str],
+) -> tuple[str | None, list[str]]:
+  ordered = sorted(node_ids)
+  
+  i = ordered.index(node_id)
+  
+  # parent index: floor((i-1)/2)
+  if i == 0:
+    parent = None
+  else:
+    parent_index = (i-1) // 2
+    parent = ordered[parent_index] 
+    
+  children = []
+  l_index = 2*i + 1
+  if l_index < len(ordered):
+    children.append(ordered[left_index])
+    
+  r_index = 2 * i + 2
+  if r_index < len(ordered):
+    children.append(ordered[r_index])
+    
+  return parent, children
+```
+
+### Ring from neighbors
+```
+def ring_from_neighbors(
+    node_id: str,
+    node_ids: list[str],
+) -> tuple[str, str]:
+    ordered = sorted(node_ids)
+
+    i = ordered.index(node_id)
+    n = len(ordered)
+
+    previous_node = ordered[(i - 1) % n]
+    next_node = ordered[(i + 1) % n]
+
+    return previous_node, next_node
+```
+### K next neighbors
+```
+def next_k_neighbors(
+    node_id: str,
+    node_ids: list[str],
+    k: int = 3,
+) -> list[str]:
+    ordered = sorted(node_ids)
+
+    i = ordered.index(node_id)
+    n = len(ordered)
+
+    neighbors = []
+
+    for offset in range(1, k + 1):
+        neighbor = ordered[(i + offset) % n]
+
+        if neighbor != node_id:
+            neighbors.append(neighbor)
+
+    return neighbors
 ```
